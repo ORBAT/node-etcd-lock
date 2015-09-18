@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Implements a distributed lock using etcd",
   "main": "index.js",
+  "bin": {
+    "etcdlocker": "./cmd/etcdlocker.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,5 +23,13 @@
   "bugs": {
     "url": "https://github.com/ORBAT/node-etcd-lock/issues"
   },
-  "homepage": "https://github.com/ORBAT/node-etcd-lock#readme"
+  "homepage": "https://github.com/ORBAT/node-etcd-lock#readme",
+  "dependencies": {
+    "bluebird": "^2.10.0",
+    "co": "^4.6.0",
+    "debug": "^2.2.0",
+    "lodash": "^3.10.1",
+    "minimist": "^1.2.0",
+    "node-etcd": "^4.2.1"
+  }
 }
