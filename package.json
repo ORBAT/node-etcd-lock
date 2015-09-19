@@ -28,6 +28,7 @@
     "bluebird": "^2.10.0",
     "co": "^4.6.0",
     "debug": "^2.2.0",
+    "get-signal": "^1.0.0",
     "lodash": "^3.10.1",
     "minimist": "^1.2.0",
     "node-etcd": "^4.2.1"
