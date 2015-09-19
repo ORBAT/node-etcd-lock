@@ -25,7 +25,7 @@ util.inherits(Lock, events.EventEmitter);
 
 function LockLostError(key, id, index) {
   Error.captureStackTrace(this, this.constructor);
-  this.name = this.constructor.name
+  this.name = this.constructor.name;
   this.message = `Lost lock. Key ${key}, ID ${id}, index ${index}`;
   this.key = key;
   this.id = id;
@@ -129,14 +129,12 @@ Lock.prototype.lock = co.wrap(function* lock() {
 
   this._dbg("Trying to lock");
 
-  let res = yield this._etcd.getAsync(this._key).catch((e) => {
+  let getRes = yield this._etcd.getAsync(this._key).catch((e) => {
     if (e.errorCode != 100) { // key not found
       throw e;
     }
     return null;
   });
-
-  this._dbg(`key contained ${inspect(res)}`);
 
   /*
    { action: 'get',
@@ -156,15 +154,14 @@ Lock.prototype.lock = co.wrap(function* lock() {
    'content-length': '153' }
    */
 
-  if (res) { // a value existed
-    let node = res[0].node;
+  if (getRes) { // a value existed
+    let node = getRes[0].node;
     if (node.value == this._id) { // it's our key, just refresh the TTL
       try {
         this._dbg(`We already have the lock with TTL ${node.ttl}, refreshing with TTL ${ttl}`);
-        let res = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevValue: this._id});
-        this._index = res[0].node.modifiedIndex;
+        let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevValue: this._id});
+        this._index = setRes[0].node.modifiedIndex;
         this._startRefresh();
-        this._dbg(`Refresh result ${inspect(res)}`);
         return this;
       } catch (e) { // somebody got between us and the refresh? Throw an error
         this._dbg(`Failed to refresh node ${inspect(node)}: ${inspect(e)}, waiting`);
@@ -180,10 +177,9 @@ Lock.prototype.lock = co.wrap(function* lock() {
   // try to set _key to _id with prevExist=false. If it fails, watch _key using prev index and then try again
   try {
     this._dbg(`Locking with TTL ${ttl}`);
-    let res = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevExist: false});
-    this._index = res[0].node.modifiedIndex;
+    let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevExist: false});
+    this._index = setRes[0].node.modifiedIndex;
     this._startRefresh();
-    this._dbg(`Set result ${inspect(res)}`);
     return this;
   } catch (e) {
     if (e.errorCode == 105) { // key exists: someone was faster than us. Wait until they unlock and try again
