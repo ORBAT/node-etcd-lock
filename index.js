@@ -1,4 +1,5 @@
 "use strict";
+var events = require("events");
 var co = require("co");
 var Promise = require("bluebird");
 var util = require("util");
@@ -10,7 +11,7 @@ function Lock(etcd, key, id, ttl) {
   if (!(etcd && key && id)) {
     throw new Error("Missing constructor argument");
   }
-
+  events.EventEmitter.call(this);
   this._etcd = Promise.promisifyAll(etcd);
   this._key = key;
   this._id = id;
@@ -20,6 +21,7 @@ function Lock(etcd, key, id, ttl) {
   this._index = -1;
   this.refreshInterval = (ttl * 1000) / 2;
 }
+util.inherits(Lock, events.EventEmitter);
 
 function LockLostError(key, id, index) {
   Error.captureStackTrace(this, this.constructor);
@@ -104,7 +106,7 @@ Lock.prototype._startRefresh = function _startRefresh() {
     this._onChange(this._index + 1, (res) => {
       if(this._interval) { // might have been unlocked already
         this._dbg(`We lost the lock. _onChange gave ${inspect(res)}`);
-        throw new LockLostError(this._key, this._id, this._index);
+        this.emit("error", new LockLostError(this._key, this._id, this._index));
       }
     });
 
@@ -166,7 +168,7 @@ Lock.prototype.lock = co.wrap(function* lock() {
         return this;
       } catch (e) { // somebody got between us and the refresh? Throw an error
         this._dbg(`Failed to refresh node ${inspect(node)}: ${inspect(e)}, waiting`);
-        throw new LockLostError(this._key, this._id, this._index);
+        this.emit("error",new LockLostError(this._key, this._id, this._index));
       }
     } else {
       this._dbg(`Key already locked by ${node.value}, waiting`);
