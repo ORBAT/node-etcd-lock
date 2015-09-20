@@ -1,6 +1,6 @@
-# node-etcd-lock
+# etcd-lock
 
-A node package for distributed locks using etcd. It uses ES6 features, so either node >=4.0.0 should be used.
+A node package for distributed locks using etcd. It required ES6 support, so node >=4.0.0 should be used.
 
 ## Usage
 
