@@ -51,7 +51,8 @@ Lock.prototype._onChange = function _onChange(idx, fn) {
       fn(res);
     }
   });
-  w.on("error", (e) => {throw e});
+
+  w.on("error", e => this.emit(e));
 };
 
 Lock.prototype._watchForUnlock = function _watchForUnlock(idx) {
@@ -78,20 +79,6 @@ Lock.prototype._watchForUnlock = function _watchForUnlock(idx) {
     this._dbg(`Watcher for index ${idx} done. Result ${inspect(res)}`);
   });
 };
-
-/*
- > p.reason()
- { [Error: Key already exists]
- cause:
- { snip  },
- isOperational: true,
- errorCode: 105,
- error:
- { errorCode: 105,
- message: 'Key already exists',
- cause: '/s4qs/lock',
- index: 8 } }
- */
 
 Lock.prototype._stopRefresh = function _stopRefresh() {
   if (this._interval) {
@@ -136,24 +123,6 @@ Lock.prototype.lock = co.wrap(function* lock() {
     return null;
   });
 
-  /*
-   { action: 'get',
-   node:
-   { key: '/s4qs/lock',
-   value: 'test1',
-   expiration: '2015-09-18T19:20:03.670116086Z',
-   ttl: 27,
-   modifiedIndex: 27,
-   createdIndex: 27 } },
-   { 'content-type': 'application/json',
-   'x-etcd-cluster-id': '7e27652122e8b2ae',
-   'x-etcd-index': '27',
-   'x-raft-index': '28885',
-   'x-raft-term': '2',
-   date: 'Fri, 18 Sep 2015 19:19:37 GMT',
-   'content-length': '153' }
-   */
-
   if (getRes) { // a value existed
     let node = getRes[0].node;
     if (node.value == this._id) { // it's our key, just refresh the TTL
@@ -163,7 +132,7 @@ Lock.prototype.lock = co.wrap(function* lock() {
         this._index = setRes[0].node.modifiedIndex;
         this._startRefresh();
         return this;
-      } catch (e) { // somebody got between us and the refresh? Throw an error
+      } catch (e) { // somebody got between us and the refresh? Welp
         this._dbg(`Failed to refresh node ${inspect(node)}: ${inspect(e)}, waiting`);
         this.emit("error",new LockLostError(this._key, this._id, this._index));
       }
