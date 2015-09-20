@@ -101,6 +101,7 @@ let helpTxt = `
 `;
 
 if(argv.help || !(argv.ttl && argv.key && argv.id)) {
+  console.log(`Missing argument: ttl ${!argv.ttl} key ${!argv.key} id ${!argv.id}`);
   console.log(helpTxt);
   process.exit(0);
 }
