@@ -1,7 +1,7 @@
 {
   "name": "etcd-lock",
   "version": "0.0.1",
-  "description": "Implements a distributed lock using etcd",
+  "description": "A distributed lock using etcd",
   "main": "index.js",
   "bin": {
     "etcdlocker": "./cmd/etcdlocker.js"
@@ -25,6 +25,9 @@
   },
   "engines": {"node": ">=4.0.0"},
   "homepage": "https://github.com/ORBAT/node-etcd-lock#readme",
+  "peerDependencies": {
+    "node-etcd": "^4.2.1"
+  },
   "dependencies": {
     "bluebird": "^2.10.0",
     "co": "^4.6.0",
