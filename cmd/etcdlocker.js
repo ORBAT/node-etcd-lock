@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 "use strict";
-let Lock = require("../index");
-let Etcd = require("node-etcd");
-let co = require("co");
-let Promise = require("bluebird");
-let childProcess = require("child_process");
-let util = require("util");
-let _ = require("lodash");
-let signal = require("get-signal");
-let inspect = _.partialRight(util.inspect, {depth: 2});
-let dbg = require("debug");
+const Lock = require("../index");
+const Etcd = require("node-etcd");
+const co = require("co");
+const Promise = require("bluebird");
+const childProcess = require("child_process");
+const util = require("util");
+const os = require("os");
+const _ = require("lodash");
+const signal = require("get-signal");
+const inspect = _.partialRight(util.inspect, {depth: 2});
+const dbg = require("debug");
 
-let argv = require("minimist")(process.argv.slice(2),
+const argv = require("minimist")(process.argv.slice(2),
   {
     "default": {etcd: "localhost:2379", "id": os.hostname()}
     , boolean: ["verbose"]
@@ -22,16 +23,14 @@ if(argv.verbose) {
   dbg.enable("etcdlocker:*,etcd-lock:*");
 }
 
-let debug = dbg("etcdlocker:main");
-let cleanUps = [];
+const debug = dbg("etcdlocker:main");
+const cleanUps = [];
 
 const LOCK_LOST = 2, CHILD_ERROR = 3, LOCK_FAIL = 1;
 
 function getSigNumber(name) {
-  debug(`Figuring out signal number for ${name}`);
   try {
     let num = Number(childProcess.execSync(`bash -c "kill -l ${name}"`, {timeout: 1000}));
-    debug(`Child killed with signal number ${num}`);
     return num || signal.getSignalNumber(name.toLocaleUpperCase());
   } catch (e) {
     return signal.getSignalNumber(name.toLocaleUpperCase());
