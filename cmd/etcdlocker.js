@@ -13,7 +13,7 @@ let dbg = require("debug");
 
 let argv = require("minimist")(process.argv.slice(2),
   {
-    "default": {etcd: "localhost:2379"}
+    "default": {etcd: "localhost:2379", "id": os.hostname()}
     , boolean: ["verbose"]
     , alias: {e: "etcd", k: "key", i: "id", t: "ttl", h: "help", v: "verbose"}
   });
@@ -73,7 +73,7 @@ let helpTxt = `
   -v --verbose              Output debug information to stderr
   -t --ttl [seconds]        Lock TTL in seconds
   -k --key [key]            etcd key for lock
-  -i --id [value]           Node ID
+  -i --id [value]           Node ID. Defaults to host name if not specified
   -e --etcd [host:port]     etcd address. Defaults to localhost:2379
 
   If etcdlocker loses the lock for whatever reason (key changed from the outside), it will kill the child process and
