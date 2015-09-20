@@ -23,6 +23,7 @@
   "bugs": {
     "url": "https://github.com/ORBAT/node-etcd-lock/issues"
   },
+  "engines": {"node": ">=4.0.0"},
   "homepage": "https://github.com/ORBAT/node-etcd-lock#readme",
   "dependencies": {
     "bluebird": "^2.10.0",
