@@ -14,7 +14,11 @@ const dbg = require("debug");
 
 const argv = require("minimist")(process.argv.slice(2),
   {
-    "default": {etcd: "localhost:2379", "id": os.hostname()}
+    "default": {
+      etcd: process.env.ETCD_LOCK_HOST || "localhost:2379"
+      , "id": process.env.ETCD_LOCK_ID || os.hostname()
+      , "key": process.env.ETCD_LOCK_KEY
+    }
     , boolean: ["verbose"]
     , alias: {e: "etcd", k: "key", i: "id", t: "ttl", h: "help", v: "verbose"}
   });
@@ -71,12 +75,13 @@ let helpTxt = `
   -h --help                 What you're looking at
   -v --verbose              Output debug information to stderr
   -t --ttl [seconds]        Lock TTL in seconds
-  -k --key [key]            etcd key for lock
-  -i --id [value]           Node ID. Defaults to host name if not specified
-  -e --etcd [host:port]     etcd address. Defaults to localhost:2379
+  -k --key [key]            etcd key for lock. Will default to the env variable ETCD_LOCK_KEY if not specified
+  -i --id [value]           Node ID. Defaults to env ETCD_LOCK_ID, or host name if no env variable is specified
+  -e --etcd [host:port]     etcd address. Defaults to ETCD_LOCK_HOST or localhost:2379
 
   If etcdlocker loses the lock for whatever reason (key changed from the outside), it will kill the child process and
   exit.
+
 
   Exit codes
 
@@ -87,6 +92,12 @@ let helpTxt = `
   1: trying to acquire the lock failed, e.g. due to etcd being unavailable
   2: the lock was lost
   3: the child process couldn't either be spawned or killed.
+
+
+  Example
+
+  # Try to acquire lock /test/lock using host name as ID, run mycmd --some --args when lock acquired
+  ETCD_LOCK_HOST=etcd:6666 etcdlocker -k /test/lock -t 120 -- mycmd --some --args
 `;
 
 if(argv.help || !(argv.ttl && argv.key && argv.id)) {
