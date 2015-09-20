@@ -54,7 +54,7 @@ let runCleanup = _.once(() => {
   return Promise.settle(sequence(cleanUps));
 });
 
-_.each(["SIGTERM", "SIGINT"], (sig) => {
+_.each(["SIGTERM", "SIGINT", "SIGQUIT"], (sig) => {
   process.on(sig, () => {
     debug(`${sig}. Running cleanup`);
     process.exitCode = 128 + (getSigNumber(sig) || 0);
