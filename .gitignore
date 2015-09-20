@@ -5,6 +5,8 @@ logs
 # WebStorm
 .idea
 
+ignore
+
 # Runtime data
 pids
 *.pid
