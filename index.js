@@ -93,6 +93,7 @@ Lock.prototype._startRefresh = function _startRefresh() {
     this._onChange(this._index + 1, (res) => {
       if(this._interval) { // might have been unlocked already
         this._dbg(`We lost the lock. _onChange gave ${inspect(res)}`);
+        this._stopRefresh();
         this.emit("error", new LockLostError(this._key, this._id, this._index));
       }
     });
@@ -129,11 +130,14 @@ Lock.prototype.lock = co.wrap(function* lock() {
       try {
         this._dbg(`We already have the lock with TTL ${node.ttl}, refreshing with TTL ${ttl}`);
         let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevValue: this._id});
+        this._dbg("Lock refreshed");
         this._index = setRes[0].node.modifiedIndex;
         this._startRefresh();
         return this;
-      } catch (e) { // somebody got between us and the refresh? Welp
-        this._dbg(`Failed to refresh node ${inspect(node)}: ${inspect(e)}, waiting`);
+      } catch (e) { // either somebody got between us and the refresh somehow, or the refresh failed due to network errors
+        // TODO(ORBAT): more fine-grained error handling
+        this._dbg(`Failed to refresh node ${inspect(node)}\n${inspect(e)}\nbailing out`);
+        this._stopRefresh();
         this.emit("error",new LockLostError(this._key, this._id, this._index));
       }
     } else {
@@ -147,6 +151,7 @@ Lock.prototype.lock = co.wrap(function* lock() {
   try {
     this._dbg(`Locking with TTL ${ttl}`);
     let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevExist: false});
+    this._dbg("Lock acquired");
     this._index = setRes[0].node.modifiedIndex;
     this._startRefresh();
     return this;
