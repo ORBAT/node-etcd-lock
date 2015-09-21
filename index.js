@@ -53,6 +53,7 @@ Lock.prototype._onChange = function _onChange(idx, fn) {
   });
 
   w.on("error", e => this.emit(e));
+  return w;
 };
 
 Lock.prototype._watchForUnlock = function _watchForUnlock(idx) {
@@ -85,18 +86,24 @@ Lock.prototype._stopRefresh = function _stopRefresh() {
     this._dbg("Stopping lock refresh loop");
     clearTimeout(this._refresh);
     this._refresh = null;
+    if(this._changeWatcher) {
+      this._changeWatcher.stop();
+      this._changeWatcher = null;
+    }
   }
 };
 
 Lock.prototype._doRefresh = function _startRefresh() {
   if (!this._refresh) {
-    this._onChange(this._index + 1, (res) => {
-      if(this._refresh) { // might have been unlocked already
-        this._dbg(`We lost the lock. _onChange gave ${inspect(res)}`);
-        this._stopRefresh();
-        this.emit("error", new LockLostError(this._key, this._id, this._index));
-      }
-    });
+    if(!this._changeWatcher) {
+      this._changeWatcher = this._onChange(this._index + 1, (res) => {
+        if(this._refresh) { // might have been unlocked already
+          this._dbg(`We lost the lock. _onChange gave ${inspect(res)}`);
+          this._stopRefresh();
+          this.emit("error", new LockLostError(this._key, this._id, this._index));
+        }
+      });
+    }
 
     this._refresh = setTimeout(() => {
       this._dbg(`Refreshing lock.`);
