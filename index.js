@@ -81,27 +81,30 @@ Lock.prototype._watchForUnlock = function _watchForUnlock(idx) {
 };
 
 Lock.prototype._stopRefresh = function _stopRefresh() {
-  if (this._interval) {
-    this._dbg("Stopping lock refresh interval");
-    clearInterval(this._interval);
-    this._interval = null;
+  if (this._refresh) {
+    this._dbg("Stopping lock refresh loop");
+    clearTimeout(this._refresh);
+    this._refresh = null;
   }
 };
 
-Lock.prototype._startRefresh = function _startRefresh() {
-  if (!this._interval) {
+Lock.prototype._doRefresh = function _startRefresh() {
+  if (!this._refresh) {
     this._onChange(this._index + 1, (res) => {
-      if(this._interval) { // might have been unlocked already
+      if(this._refresh) { // might have been unlocked already
         this._dbg(`We lost the lock. _onChange gave ${inspect(res)}`);
         this._stopRefresh();
         this.emit("error", new LockLostError(this._key, this._id, this._index));
       }
     });
 
-    this._dbg(`Doing lock refresh at ${this.refreshInterval}ms intervals`);
-    this._interval = setInterval(() => {
-      this._dbg("Refreshing lock");
-      this.lock();
+    this._refresh = setTimeout(() => {
+      this._dbg(`Refreshing lock.`);
+      Promise.resolve(this.lock()).tap(() => {
+        this._dbg(`Refresh finished.`);
+        this._refresh = null;
+        return this._doRefresh();
+      });
     }, this.refreshInterval);
   }
 };
@@ -132,7 +135,7 @@ Lock.prototype.lock = co.wrap(function* lock() {
         let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevValue: this._id});
         this._dbg("Lock refreshed");
         this._index = setRes[0].node.modifiedIndex;
-        this._startRefresh();
+        this._doRefresh();
         return this;
       } catch (e) { // either somebody got between us and the refresh somehow, or the refresh failed due to network errors
         // TODO(ORBAT): more fine-grained error handling
@@ -153,7 +156,7 @@ Lock.prototype.lock = co.wrap(function* lock() {
     let setRes = yield this._etcd.setAsync(this._key, this._id, {ttl: ttl, prevExist: false});
     this._dbg("Lock acquired");
     this._index = setRes[0].node.modifiedIndex;
-    this._startRefresh();
+    this._doRefresh();
     return this;
   } catch (e) {
     if (e.errorCode == 105) { // key exists: someone was faster than us. Wait until they unlock and try again
