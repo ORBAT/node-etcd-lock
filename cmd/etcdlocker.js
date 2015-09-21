@@ -20,7 +20,7 @@ const argv = require("minimist")(process.argv.slice(2),
       , "key": process.env.ETCD_LOCK_KEY
     }
     , boolean: ["verbose"]
-    , alias: {e: "etcd", k: "key", i: "id", t: "ttl", h: "help", v: "verbose"}
+    , alias: {e: "etcd", k: "key", i: "id", t: "ttl", h: "help", v: "verbose", r: "refresh"}
   });
 
 if(argv.verbose) {
@@ -75,6 +75,7 @@ let helpTxt = `
   -h --help                 What you're looking at
   -v --verbose              Output debug information to stderr
   -t --ttl [seconds]        Lock TTL in seconds
+  -r --refresh [seconds]    Lock refresh period in seconds. Defaults to TTL / 2
   -k --key [key]            etcd key for lock. Will default to the env variable ETCD_LOCK_KEY if not specified
   -i --id [value]           Node ID. Defaults to env ETCD_LOCK_ID, or host name if no env variable is specified
   -e --etcd [host:port]     etcd address. Defaults to ETCD_LOCK_HOST or localhost:2379
@@ -106,6 +107,12 @@ if(argv.help || !(argv.ttl && argv.key && argv.id)) {
   process.exit(0);
 }
 
+if(!argv.refresh) {
+  argv.refresh = (argv.ttl * 1000) / 2;
+} else {
+  argv.refresh *= 1000;
+}
+
 let cmd = _.head(argv._);
 let args = _.tail(argv._);
 
@@ -116,6 +123,7 @@ debug(`Host ${hostPort[0]} port ${hostPort[1]}`);
 let etcd = new Etcd(hostPort[0], hostPort[1]);
 
 let lock = new Lock(etcd, argv.key, argv.id, argv.ttl);
+lock.refreshInterval = argv.refresh;
 
 co(function* () {
   debug(`Locking ${lock}`);

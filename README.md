@@ -39,7 +39,8 @@ lock.lock()
 ```
 
 Note that the example above has no error handling: `lock()` will return a rejected promise if, for example, the etcd cluster
-is not reachable.
+is not reachable. The lock instance itself will also emit `error` events in case the lock is lost for whatever reason.
+Ignoring the error events is a bad idea, as you have no idea what state the lock is in.
 
 Calling `lock()` multiple times will simply refresh the lock: you only need to `unlock()` once. The lock will 
 automatically refresh itself at intervals of `(lock.ttl*1000) / 2`. To change the refresh interval or TTL after construction, 
@@ -61,6 +62,7 @@ etcd-lock comes with a command line tool called etcdlocker (do e.g. `npm install
   -h --help                 What you're looking at
   -v --verbose              Output debug information to stderr
   -t --ttl [seconds]        Lock TTL in seconds
+  -r --refresh [seconds]    Lock refresh period in seconds. Defaults to TTL / 2
   -k --key [key]            etcd key for lock. Will default to the env variable ETCD_LOCK_KEY if not specified
   -i --id [value]           Node ID. Defaults to env ETCD_LOCK_ID, or host name if no env variable is specified
   -e --etcd [host:port]     etcd address. Defaults to ETCD_LOCK_HOST or localhost:2379
