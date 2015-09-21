@@ -107,11 +107,17 @@ Lock.prototype._doRefresh = function _startRefresh() {
 
     this._refresh = setTimeout(() => {
       this._dbg(`Refreshing lock.`);
-      Promise.resolve(this.lock()).tap(() => {
-        this._dbg(`Refresh finished.`);
-        this._refresh = null;
-        return this._doRefresh();
-      });
+      Promise.resolve(this.lock())
+        .tap(() => {
+          this._dbg(`Refresh finished.`);
+          this._refresh = null;
+          return this._doRefresh();
+        })
+        .catch((e) => {
+          this._dbg(`Couldn't refresh lock: ${inspect(e)}`);
+          this._stopRefresh();
+          this.emit("error", new LockLostError(this._key, this._id, this._index));
+        });
     }, this.refreshInterval);
   }
 };
