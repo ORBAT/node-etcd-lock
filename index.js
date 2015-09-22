@@ -123,6 +123,7 @@ Lock.prototype._doRefresh = function _startRefresh() {
           return this._doRefresh();
         })
         .catch((e) => {
+          // TODO(ORBAT): try to recover from refresh errors
           this._dbg(`Couldn't refresh lock: ${inspect(e)}`);
           this._stopRefresh();
           this.emit("error", new LockLostError(this._key, this._id, this._index));
@@ -163,11 +164,12 @@ Lock.prototype.lock = co.wrap(function* lock() {
         // TODO(ORBAT): more fine-grained error handling
         this._dbg(`Failed to refresh node ${inspect(node)}\n${inspect(e)}\nbailing out`);
         this._stopRefresh();
-        this.emit("error",new LockLostError(this._key, this._id, this._index));
+        this.emit("error", new LockLostError(this._key, this._id, this._index));
       }
     } else {
       this._dbg(`Key already locked by ${node.value}, waiting`);
-      return this._watchForUnlock(node.modifiedIndex + 1).then(this.lock.bind(this));
+      yield this._watchForUnlock(node.modifiedIndex + 1);
+      return this.lock();
     }
   }
 
@@ -183,7 +185,8 @@ Lock.prototype.lock = co.wrap(function* lock() {
   } catch (e) {
     if (e.errorCode == 105) { // key exists: someone was faster than us. Wait until they unlock and try again
       this._dbg("Somebody beat us to it, waiting");
-      return this._watchForUnlock(e.error.index + 1).then(this.lock.bind(this));
+      yield this._watchForUnlock(e.error.index + 1);
+      return this.lock();
     }
 
     throw e; // dunno what happened
