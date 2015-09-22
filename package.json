@@ -1,6 +1,6 @@
 {
   "name": "etcd-lock",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A distributed lock using etcd",
   "main": "index.js",
   "bin": {
@@ -23,7 +23,9 @@
   "bugs": {
     "url": "https://github.com/ORBAT/node-etcd-lock/issues"
   },
-  "engines": {"node": ">=4.0.0"},
+  "engines": {
+    "node": ">=4.0.0"
+  },
   "homepage": "https://github.com/ORBAT/node-etcd-lock#readme",
   "dependencies": {
     "bluebird": "^2.10.0",
