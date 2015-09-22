@@ -60,6 +60,7 @@ Lock.prototype._watchForUnlock = function _watchForUnlock(idx) {
   return new Promise((resolve, reject) => {
     this._dbg(`Watching for unlock starting from index ${idx}`);
     let w = this._etcd.watcher(this._key, idx);
+    this._unlockWatcher = w;
     let solver = (fn) => {
       return (res) => {
         w.removeAllListeners();
@@ -87,8 +88,16 @@ Lock.prototype._stopRefresh = function _stopRefresh() {
     clearTimeout(this._refresh);
     this._refresh = null;
     if(this._changeWatcher) {
+      this._dbg("Stopping change watcher");
+      this._changeWatcher.removeAllListeners();
       this._changeWatcher.stop();
       this._changeWatcher = null;
+    }
+
+    if(this._unlockWatcher) {
+      this._dbg("Stopping unlock watcher");
+      this._unlockWatcher.removeAllListeners();
+      this._unlockWatcher.stop();
     }
   }
 };
