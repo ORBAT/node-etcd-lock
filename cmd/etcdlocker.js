@@ -9,7 +9,7 @@ const util = require("util");
 const os = require("os");
 const _ = require("lodash");
 const signal = require("get-signal");
-const inspect = _.partialRight(util.inspect, {depth: 2});
+const inspect = _.partialRight(util.inspect, {depth: 3});
 const dbg = require("debug");
 
 const argv = require("minimist")(process.argv.slice(2),

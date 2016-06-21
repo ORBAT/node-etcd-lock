@@ -4,7 +4,7 @@ var co = require("co");
 var Promise = require("bluebird");
 var util = require("util");
 var _ = require("lodash");
-var inspect = _.partialRight(util.inspect, {depth: 4});
+var inspect = _.partialRight(util.inspect, {depth: 2});
 var dbg = require("debug");
 
 function Lock(etcd, key, id, ttl) {
