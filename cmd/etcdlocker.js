@@ -80,7 +80,7 @@ let helpTxt = `
   -i --id [value]           Node ID. Defaults to env ETCD_LOCK_ID, or host name if no env variable is specified
   -e --etcd [host:port]     etcd address. Defaults to ETCD_LOCK_HOST or localhost:2379
 
-  If etcdlocker loses the lock for whatever reason (key changed from the outside), it will kill the child process and
+  If etcdlocker loses the lock for whatever reason (e.g. key was changed "from the outside"), it will kill the child process and
   exit.
 
 
@@ -172,7 +172,7 @@ co(function* () {
       return new Promise((res) => {
         cp.kill("SIGTERM");
         cp.on("exit", res);
-      }).tap(() => debug("Child process dead"));
+      }).tap(() => debug("Child process dead")).timeout(300000);
     }
     return Promise.resolve();
   });
