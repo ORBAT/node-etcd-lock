@@ -1,11 +1,11 @@
 "use strict";
-var events = require("events");
-var co = require("co");
-var Promise = require("bluebird");
-var util = require("util");
-var _ = require("lodash");
-var inspect = _.partialRight(util.inspect, {depth: 2});
-var dbg = require("debug");
+const events = require("events");
+const co = require("co");
+const Promise = require("bluebird");
+const util = require("util");
+const _ = require("lodash");
+const inspect = _.partialRight(util.inspect, {depth: 2});
+const dbg = require("debug");
 
 function Lock(etcd, key, id, ttl) {
   if (!(etcd && key && id)) {
